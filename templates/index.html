@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Logo Detection</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <style>
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .result-container {
+            margin-top: 20px;
+            display: none;
+        }
+        .error-message {
+            color: red;
+            margin-top: 10px;
+            display: none;
+        }
+        .loading {
+            display: none;
+            margin-top: 10px;
+        }
+        .result-images {
+            display: flex;
+            gap: 20px;
+            margin-top: 20px;
+        }
+        .result-images img {
+            max-width: 400px;
+            height: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Logo Detection</h1>
+        <form id="uploadForm">
+            <input type="file" name="file" accept="image/*" required>
+            <button type="submit">Upload & Detect</button>
+        </form>
+
+        <div class="loading">Processing image...</div>
+        <div class="error-message"></div>
+
+        <div class="result-container">
+            <h2>Detection Result</h2>
+            <p>Detected Logo: <span id="logoName"></span></p>
+            <div class="result-images">
+                <div>
+                    <h3>Original Image</h3>
+                    <img id="image1" alt="Original Image">
+                </div>
+                <div>
+                    <h3>Detected Logo</h3>
+                    <img id="image2" alt="Detected Logo">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        $(document).ready(function() {
+            $('#uploadForm').on('submit', function(e) {
+                e.preventDefault();
+                
+                // Reset previous results
+                $('.result-container').hide();
+                $('.error-message').hide();
+                
+                // Show loading
+                $('.loading').show();
+                
+                var formData = new FormData(this);
+                
+                $.ajax({
+                    url: '/process',
+                    type: 'POST',
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    success: function(response) {
+                        $('.loading').hide();
+                        
+                        if (response.success) {
+                            $('#logoName').text(response.label);
+                            if (response.image1) {
+                                $('#image1').attr('src', 'data:image/png;base64,' + response.image1);
+                            }
+                            if (response.image2) {
+                                $('#image2').attr('src', 'data:image/png;base64,' + response.image2);
+                            }
+                            $('.result-container').show();
+                        } else {
+                            $('.error-message').text(response.error).show();
+                        }
+                    },
+                    error: function(xhr) {
+                        $('.loading').hide();
+                        var errorMessage = 'An error occurred. Please try again.';
+                        if (xhr.responseJSON && xhr.responseJSON.error) {
+                            errorMessage = xhr.responseJSON.error;
+                        }
+                        $('.error-message').text(errorMessage).show();
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>
